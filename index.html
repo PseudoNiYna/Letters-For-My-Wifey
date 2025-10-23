@@ -256,7 +256,7 @@ Message B"></textarea>
 
       async function loadStorage(){
       try {
-        const res = await fetch('wifey_letters_export.json');
+        const res = await fetch('https://raw.githubusercontent.com/PseudoNiYna/Letters-For-My-Wifey/refs/heads/main/wifey_letters_export.json');
         if (!res.ok) throw new Error('Failed to fetch messages');
         const data = await res.json();
         return data;
