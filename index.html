@@ -254,11 +254,17 @@ Message B"></textarea>
       // defaults
       function defaultData(){ const d = {}; moods.forEach(m=>d[m]=[]); return d; }
 
-      function loadStorage(){
-        try{ const raw = localStorage.getItem(STORAGE_KEY); if(!raw) return defaultData(); return JSON.parse(raw); }
-        catch(e){ console.error(e); return defaultData(); }
+      async function loadStorage(){
+      try {
+        const res = await fetch('wifey_letters_export.json');
+        if (!res.ok) throw new Error('Failed to fetch messages');
+        const data = await res.json();
+        return data;
+      } catch (e) {
+        console.error('Error loading messages:', e);
+        return defaultData();
       }
-
+    }
       function saveStorage(obj){
         localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
         localStorage.setItem('_wifey_last_used', new Date().toLocaleString());
@@ -269,7 +275,7 @@ Message B"></textarea>
 
       function parseTextarea(v){ if(!v) return []; const parts = v.split(/\n-{3,}\n|\n\s*\n/).map(s=>s.trim()).filter(Boolean); return parts; }
 
-      function saveFromAdmin(){ const obj = {}; moods.forEach(m=>{ const el = document.getElementById('txt-' + m); obj[m] = el ? parseTextarea(el.value) : []; }); saveStorage(obj); populateAdmin(); }
+      function saveFromAdmin(){ const obj = {}; moods.forEach(m=>{ const el = document.getElementById('txt-' + m); obj[m] = el ? parseTextarea(el.value) : []; }); populateAdmin(); }
 
       function pickRandom(mood){ const data = loadStorage(); const arr = data[mood] || []; if(!arr.length) return null; return arr[Math.floor(Math.random()*arr.length)]; }
 
