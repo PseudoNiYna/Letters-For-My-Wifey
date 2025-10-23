@@ -1,119 +1,132 @@
-<!--
-wifey_letters.html
-Single-file romantic-but-classy mood-based love-letter webpage.
-How it works:
- - Open this file in your browser (double-click or drag into browser). It runs fully in the browser and stores letters in localStorage (only on your device).
- - Choose a mood and click "Show Message" to display a random letter for that mood.
- - Admin panel (hidden): click the site title 5 times quickly to open. There you can paste/edit messages for each mood.
- - In each mood textarea, paste messages separated by a line with three dashes (---) OR by an empty line.
- - Use Export / Import to back up or transfer your letters.
-
-Notes on privacy: All data is stored locally in your browser's localStorage under the key "wifeyLetters_v1". If you want to move the site to another device, use the Export button to save a JSON file and Import it on the other device.
--->
-
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Letters for My Wifey</title>
+  <title>Letters for My Wifey 💌</title>
+  <meta name="description" content="A private mood-based love-letter generator. Click the title 5 times and enter the secret password to edit letters (admin).">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#fbf7f9;
+      --bg:#fff9fb;
       --card:#ffffff;
-      --muted:#7a6b7a;
-      --accent:#f6c6d6;
-      --accent-2:#ffd9e8;
-      --shadow: 0 6px 18px rgba(18,12,20,0.06);
+      --muted:#816570;
+      --accent:#f7c6d6;
+      --accent-2:#ffe9f0;
+      --text:#22141b;
+      --shadow: 0 10px 30px rgba(34,20,27,0.06);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;
       background:linear-gradient(180deg,var(--bg) 0%, #fffafc 100%);
-      color:#231723; display:flex; align-items:center; justify-content:center; padding:28px;
+      color:var(--text); display:flex; align-items:center; justify-content:center; padding:28px;
     }
 
     .container{width:100%; max-width:920px}
 
-    header{display:flex; align-items:center; gap:18px; margin-bottom:28px}
+    header{display:flex; align-items:center; gap:18px; margin-bottom:24px}
     .title{
-      font-family:'Playfair Display', serif; font-size:28px; font-weight:700; letter-spacing:0.2px; cursor:pointer;
-      user-select:none; position:relative; padding-right:8px;
+      font-family:'Playfair Display', serif; font-size:30px; font-weight:700; letter-spacing:0.2px; cursor:pointer;
+      user-select:none; position:relative; padding-right:8px; color:#3b1b26;
     }
     .subtitle{color:var(--muted); font-size:13px}
 
-    .card{background:var(--card); border-radius:14px; padding:26px; box-shadow:var(--shadow)}
+    .card{background:var(--card); border-radius:14px; padding:22px; box-shadow:var(--shadow)}
 
-    .main{display:grid; grid-template-columns:1fr 1fr; gap:22px}
+    .main{display:grid; grid-template-columns:1fr 360px; gap:22px}
 
     /* left panel */
     .controls{display:flex; flex-direction:column; gap:12px}
-    select{padding:10px 12px; border-radius:10px; border:1px solid #f0d8e2; background:linear-gradient(180deg,#fff,#fff); font-size:15px}
-    button.primary{background:linear-gradient(90deg,#ffb6cb,#ffcbdc); border:0; padding:10px 14px; border-radius:10px; font-weight:600; cursor:pointer}
-    button.ghost{background:transparent; border:1px solid #efe0e6; padding:8px 12px; border-radius:8px; cursor:pointer}
+    .moods{display:flex; gap:10px; flex-wrap:wrap}
+    .mood-btn{padding:10px 14px; border-radius:12px; border:1px solid transparent; background:linear-gradient(180deg,#fff,#fff); cursor:pointer; font-weight:600}
+    .mood-btn:hover{transform:translateY(-2px); transition:transform .18s}
 
-    .messageBox{min-height:220px; border-radius:10px; padding:16px; background:linear-gradient(180deg,#fff,#fff); border:1px dashed #f0d0df; font-size:16px; line-height:1.45}
+    .messageArea{margin-top:18px}
+    .messageCard{min-height:140px; border-radius:12px; padding:18px; background:linear-gradient(180deg,#fff,#fff); border:1px dashed #f3d7e1; font-size:16px; line-height:1.6; box-shadow:0 8px 24px rgba(225,180,200,0.06); opacity:0; transform:translateY(6px);}
+    .messageCard.show{animation:fadeUp .45s ease forwards}
+    @keyframes fadeUp{to{opacity:1; transform:none}}
 
     /* right panel admin hint */
     .right{display:flex; flex-direction:column; gap:12px}
     .hint{color:var(--muted); font-size:13px}
 
-    footer{margin-top:16px; color:var(--muted); font-size:13px}
+    footer{margin-top:18px; color:var(--muted); font-size:13px}
 
     /* admin modal */
-    .modal-backdrop{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(18,12,20,0.35)}
-    .modal{width:92%; max-width:880px; max-height:86vh; overflow:auto; background:var(--card); border-radius:12px; padding:18px}
+    .modal-backdrop{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(18,12,20,0.42); z-index:80}
+    .modal{width:94%; max-width:920px; max-height:86vh; overflow:auto; background:var(--card); border-radius:12px; padding:18px}
     .modal h3{font-family:'Playfair Display', serif; margin:0 0 8px 0}
     .mood-block{margin-bottom:14px}
-    textarea{width:100%; min-height:120px; resize:vertical; padding:12px; border-radius:8px; border:1px solid #efe0e6; font-family:inherit}
+    textarea{width:100%; min-height:110px; resize:vertical; padding:12px; border-radius:8px; border:1px solid #efe7ea; font-family:inherit}
     .modal .actions{display:flex; gap:8px; margin-top:8px}
 
     .top-row{display:flex; align-items:center; justify-content:space-between; gap:12px}
 
-    /* small decorative heart */
     .heart{width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:10px; background:linear-gradient(180deg,var(--accent),var(--accent-2)); box-shadow:0 6px 20px rgba(246,198,214,0.18)}
     .heart:after{content:'❤'; font-size:16px; color:#9b3750}
 
     /* subtle responsive */
-    @media (max-width:860px){.main{grid-template-columns:1fr} }
+    @media (max-width:920px){.main{grid-template-columns:1fr} }
 
     .small{font-size:13px}
+
+    /* password prompt */
+    .pwInput{display:flex; gap:8px; align-items:center}
+    .pw{padding:8px 10px; border-radius:8px; border:1px solid #e8d6db}
+    .btn{padding:8px 12px; border-radius:8px; cursor:pointer; border:0}
+    .btn.primary{background:linear-gradient(90deg,#ffb6cb,#ffcbdc); font-weight:600}
+    .btn.ghost{background:transparent; border:1px solid #efe0e6}
+
+    /* tiny floating hearts background (very subtle) */
+    .bg-hearts{position:fixed; inset:0; pointer-events:none; z-index:0}
+    .bg-hearts span{position:absolute; opacity:0.06; font-size:18px}
   </style>
 </head>
 <body>
+  <div class="bg-hearts" aria-hidden>
+    <span style="left:8%; top:10%">❤</span>
+    <span style="left:72%; top:22%">❤</span>
+    <span style="left:40%; top:72%">❤</span>
+    <span style="left:88%; top:60%">❤</span>
+    <span style="left:18%; top:46%">❤</span>
+  </div>
+
   <div class="container">
     <header>
-      <div style="display:flex;align-items:center;gap:12px">
-        <div class="title" id="siteTitle">Letters for My Wifey</div>
+      <div style="display:flex;align-items:center;gap:12px; z-index:10">
+        <div class="title" id="siteTitle">Letters for My Wifey 💌</div>
         <div class="subtitle small">A private mood-based message generator</div>
       </div>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+      <div style="margin-left:auto;display:flex;align-items:center;gap:10px; z-index:10">
         <div class="heart" title="sweet heart"></div>
       </div>
     </header>
 
-    <div class="card main">
+    <div class="card main" role="application">
       <div>
         <div class="controls">
-          <label for="moodSelect" class="small">Choose mood</label>
-          <select id="moodSelect">
-            <option value="Unloved">Unloved</option>
-            <option value="Missing me">Missing me</option>
-            <option value="Angry at me">Angry at me</option>
-            <option value="Doubting yourself">Doubting yourself</option>
-            <option value="Can't sleep">Can't sleep</option>
-            <option value="Sad">Sad</option>
-          </select>
-
-          <div style="display:flex;gap:10px;margin-top:6px">
-            <button class="primary" id="showBtn">Show Message</button>
-            <button class="ghost" id="clearBtn">Clear Message</button>
+          <div style="display:flex; align-items:center; justify-content:space-between">
+            <div>
+              <label class="small" style="display:block; margin-bottom:6px">Choose mood</label>
+              <div class="moods" id="moodButtons">
+                <button class="mood-btn" data-mood="Unloved">Unloved</button>
+                <button class="mood-btn" data-mood="Missing me">Missing Me</button>
+                <button class="mood-btn" data-mood="Angry at me">Angry at Me</button>
+                <button class="mood-btn" data-mood="Doubting yourself">Doubting Yourself</button>
+                <button class="mood-btn" data-mood="Can't sleep">Can't Sleep</button>
+                <button class="mood-btn" data-mood="Sad">Sad</button>
+              </div>
+            </div>
+            <div style="text-align:right">
+              <div class="small hint">Tip: click the title 5 times to open admin (password required).</div>
+            </div>
           </div>
 
-        <div style="margin-top:16px">
-          <div class="messageBox" id="messageBox">Your message will appear here. Select a mood and click <strong>Show Message</strong>.</div>
+          <div class="messageArea">
+            <div id="messageCard" class="messageCard">Your message will appear here. Click a mood above to show a message.</div>
+          </div>
         </div>
       </div>
 
@@ -121,13 +134,13 @@ Notes on privacy: All data is stored locally in your browser's localStorage unde
         <div class="card" style="padding:14px">
           <div style="font-weight:600">Quick controls</div>
           <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
-            <button class="ghost" id="copyBtn">Copy</button>
-            <button class="ghost" id="shareBtn">Share (navigator.share)</button>
-            <button class="ghost" id="exportBtn">Export</button>
-            <button class="ghost" id="importBtn">Import</button>
-            <button class="ghost" id="resetBtn">Reset Storage</button>
+            <button class="btn ghost" id="copyBtn">Copy</button>
+            <button class="btn ghost" id="shareBtn">Share</button>
+            <button class="btn ghost" id="exportBtn">Export</button>
+            <button class="btn ghost" id="importBtn">Import</button>
+            <button class="btn ghost" id="resetBtn">Reset</button>
           </div>
-          <div style="margin-top:10px; color:var(--muted); font-size:13px">Only stored locally on this browser.</div>
+          <div style="margin-top:10px; color:var(--muted); font-size:13px">Messages stored locally in this browser only.</div>
         </div>
 
         <div class="card" style="padding:14px">
@@ -138,17 +151,17 @@ Notes on privacy: All data is stored locally in your browser's localStorage unde
       </aside>
     </div>
 
-    <footer style="text-align:center">Made with care 💌 — Local-only storage (no server). Use Export to back up.</footer>
+    <footer style="text-align:center">Made with care 💌 — Local-only storage. Export to back up.</footer>
   </div>
 
   <!-- admin modal -->
-  <div class="modal-backdrop" id="adminModal">
-    <div class="modal">
+  <div class="modal-backdrop" id="adminModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
       <div class="top-row">
-        <h3>Edit letters (admin)</h3>
+        <h3 id="adminTitle">Edit letters (admin)</h3>
         <div style="display:flex;gap:8px">
-          <button class="ghost" id="adminClose">Close</button>
-          <button class="primary" id="adminSave">Save</button>
+          <button class="btn ghost" id="adminClose">Close</button>
+          <button class="btn primary" id="adminSave">Save Messages</button>
         </div>
       </div>
 
@@ -157,7 +170,9 @@ Notes on privacy: All data is stored locally in your browser's localStorage unde
       <div style="margin-top:12px">
         <div class="mood-block">
           <label><strong>Unloved</strong></label>
-          <textarea id="txt-Unloved" placeholder="Message A\n---\nMessage B"></textarea>
+          <textarea id="txt-Unloved" placeholder="Message A
+---
+Message B"></textarea>
         </div>
 
         <div class="mood-block">
@@ -185,24 +200,38 @@ Notes on privacy: All data is stored locally in your browser's localStorage unde
           <textarea id="txt-Sad"></textarea>
         </div>
 
-        <div class="actions">
-          <button class="ghost" id="adminPreview">Preview Selected Mood</button>
-          <button class="ghost" id="adminClear">Clear All</button>
-          <button class="ghost" id="adminLoadDefaults">Load Example Placeholders</button>
+        <div class="modal-actions" style="display:flex; gap:8px; margin-top:8px;">
+          <button class="btn ghost" id="adminPreview">Preview Mood</button>
+          <button class="btn ghost" id="adminClear">Clear Fields</button>
+          <button class="btn ghost" id="adminLoadDefaults">Load Placeholders</button>
         </div>
       </div>
 
       <div style="margin-top:12px; border-top:1px solid #f1e6eb; padding-top:12px; display:flex; gap:8px; flex-wrap:wrap">
-        <button class="ghost" id="exportJson">Export JSON</button>
-        <label class="ghost" style="padding:8px 12px; border-radius:8px; cursor:pointer">Import JSON<input type="file" id="importFile" accept="application/json" style="display:none" /></label>
+        <button class="btn ghost" id="exportJson">Export JSON</button>
+        <label class="btn ghost" style="padding:8px 12px; border-radius:8px; cursor:pointer">Import JSON<input type="file" id="importFile" accept="application/json" style="display:none" /></label>
       </div>
 
+      <div style="margin-top:10px; color:var(--muted); font-size:12px">Admin access requires the secret password.</div>
+    </div>
+  </div>
+
+  <!-- password prompt (small) -->
+  <div id="pwPrompt" style="display:none; position:fixed; right:18px; top:18px; z-index:90">
+    <div class="card" style="padding:10px; border-radius:10px">
+      <div style="font-weight:600; margin-bottom:6px">Admin access</div>
+      <div class="pwInput">
+        <input id="pwInput" class="pw" placeholder="Enter password" type="password" />
+        <button class="btn primary" id="pwSubmit">Unlock</button>
+        <button class="btn ghost" id="pwCancel">Cancel</button>
+      </div>
     </div>
   </div>
 
   <script>
-    (() => {
+    (function () {
       const STORAGE_KEY = 'wifeyLetters_v1';
+      const ADMIN_PW = 'JNY4'; // your secret password
       const siteTitle = document.getElementById('siteTitle');
       const adminModal = document.getElementById('adminModal');
       const adminClose = document.getElementById('adminClose');
@@ -210,224 +239,118 @@ Notes on privacy: All data is stored locally in your browser's localStorage unde
       const adminPreview = document.getElementById('adminPreview');
       const adminClear = document.getElementById('adminClear');
       const adminLoadDefaults = document.getElementById('adminLoadDefaults');
-      const showBtn = document.getElementById('showBtn');
-      const clearBtn = document.getElementById('clearBtn');
-      const messageBox = document.getElementById('messageBox');
-      const moodSelect = document.getElementById('moodSelect');
+      const messageCard = document.getElementById('messageCard');
+      const lastUsed = document.getElementById('lastUsed');
+
       const copyBtn = document.getElementById('copyBtn');
       const shareBtn = document.getElementById('shareBtn');
       const exportBtn = document.getElementById('exportBtn');
       const importBtn = document.getElementById('importBtn');
       const resetBtn = document.getElementById('resetBtn');
-      const lastUsed = document.getElementById('lastUsed');
+
+      const pwPrompt = document.getElementById('pwPrompt');
+      const pwInput = document.getElementById('pwInput');
+      const pwSubmit = document.getElementById('pwSubmit');
+      const pwCancel = document.getElementById('pwCancel');
 
       const moods = ["Unloved","Missing me","Angry at me","Doubting yourself","Can't sleep","Sad"];
 
-      // default structure
-      function defaultData(){
-        const d = {};
-        moods.forEach(m=>d[m]=[]);
-        return d;
-      }
+      // defaults
+      function defaultData(){ const d = {}; moods.forEach(m=>d[m]=[]); return d; }
 
       function loadStorage(){
-        try{
-          const raw = localStorage.getItem(STORAGE_KEY);
-          if(!raw) return defaultData();
-          return JSON.parse(raw);
-        }catch(e){ console.error(e); return defaultData(); }
+        try{ const raw = localStorage.getItem(STORAGE_KEY); if(!raw) return defaultData(); return JSON.parse(raw); }
+        catch(e){ console.error(e); return defaultData(); }
       }
 
       function saveStorage(obj){
         localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+        localStorage.setItem('_wifey_last_used', new Date().toLocaleString());
       }
 
-      // initialize from storage into admin inputs
-      function populateAdmin(){
-        const data = loadStorage();
-        moods.forEach(m => {
-          const el = document.getElementById('txt-' + m);
-          if(!el) return;
-          // join with \n---\n between messages for clarity
-          el.value = (data[m] && data[m].length) ? data[m].join('\n---\n') : '';
+      // populate admin textareas
+      function populateAdmin(){ const data = loadStorage(); moods.forEach(m=>{ const el = document.getElementById('txt-' + m); if(!el) return; el.value = (data[m] && data[m].length) ? data[m].join('\n---\n') : ''; }); }
+
+      function parseTextarea(v){ if(!v) return []; const parts = v.split(/\n-{3,}\n|\n\s*\n/).map(s=>s.trim()).filter(Boolean); return parts; }
+
+      function saveFromAdmin(){ const obj = {}; moods.forEach(m=>{ const el = document.getElementById('txt-' + m); obj[m] = el ? parseTextarea(el.value) : []; }); saveStorage(obj); populateAdmin(); }
+
+      function pickRandom(mood){ const data = loadStorage(); const arr = data[mood] || []; if(!arr.length) return null; return arr[Math.floor(Math.random()*arr.length)]; }
+
+      function escapeHtml(s){ return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[ch]); }
+
+      function displayMessage(text){ if(!text){ messageCard.innerHTML = '<span style="color:var(--muted)">No messages yet for that mood. (Admin required)</span>'; messageCard.classList.remove('show'); return; } const html = text.split('\n').map(escapeHtml).join('<br>'); messageCard.innerHTML = '<div style="white-space:pre-wrap">'+html+'</div>'; // trigger animation
+        void messageCard.offsetWidth; messageCard.classList.remove('show'); setTimeout(()=>messageCard.classList.add('show'),10); lastUsed.textContent = new Date().toLocaleString(); }
+
+      // attach mood buttons
+      document.querySelectorAll('.mood-btn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const mood = btn.getAttribute('data-mood');
+          const msg = pickRandom(mood);
+          displayMessage(msg);
         });
-      }
+      });
 
-      // parse textarea into array of messages
-      function parseTextarea(v){
-        if(!v) return [];
-        // split by line with only dashes, or by blank lines
-        const parts = v.split(/\n-{3,}\n|\n\s*\n/).map(s=>s.trim()).filter(Boolean);
-        return parts;
-      }
+      // copy/share/export/import/reset
+      copyBtn.addEventListener('click', async ()=>{ const text = messageCard.innerText || ''; if(!text) return alert('No message to copy.'); try{ await navigator.clipboard.writeText(text); alert('Copied to clipboard'); }catch(e){ alert('Clipboard failed: '+e); } });
+      shareBtn.addEventListener('click', async ()=>{ const text = messageCard.innerText || ''; if(!text) return alert('No message to share.'); if(navigator.share){ try{ await navigator.share({title:'A message for you', text}); }catch(e){ alert('Share canceled'); } } else alert('Share not supported on this browser.'); });
 
-      // save from admin inputs into storage
-      function saveFromAdmin(){
-        const obj = {};
-        moods.forEach(m=>{
-          const el = document.getElementById('txt-' + m);
-          obj[m] = el ? parseTextarea(el.value) : [];
-        });
-        saveStorage(obj);
-        populateAdmin();
-      }
+      function download(filename, text){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'application/json'})); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); }
+      exportBtn.addEventListener('click', ()=>{ const data = loadStorage(); download('wifey_letters_export.json', JSON.stringify(data, null, 2)); });
+      importBtn.addEventListener('click', ()=>{ document.getElementById('importFile').click(); });
 
-      // random pick
-      function pickRandom(mood){
-        const data = loadStorage();
-        const arr = data[mood] || [];
-        if(!arr.length) return null;
-        return arr[Math.floor(Math.random()*arr.length)];
-      }
+      document.getElementById('exportJson').addEventListener('click', ()=>{ const data = loadStorage(); download('wifey_letters_export.json', JSON.stringify(data, null, 2)); });
 
-      function displayMessage(text){
-        if(!text){ messageBox.innerHTML = '<span style="color:var(--muted)">No messages for this mood. Open admin (5 clicks on the title) to add letters.</span>'; return; }
-        // simple formatting: convert newlines to <br>
-        const html = text.split('\n').map(escapeHtml).join('<br>');
-        messageBox.innerHTML = '<div style="white-space:pre-wrap">' + html + '</div>';
-        lastUsed.textContent = new Date().toLocaleString();
-      }
+      document.getElementById('importFile').addEventListener('change', (ev)=>{
+        const f = ev.target.files[0]; if(!f) return; const reader = new FileReader(); reader.onload = e=>{ try{ const obj = JSON.parse(e.target.result); let ok = true; moods.forEach(m=>{ if(!(m in obj)) ok = false; }); if(!ok){ alert('Invalid file format.'); return; } saveStorage(obj); populateAdmin(); alert('Imported and saved locally.'); }catch(err){ alert('Import failed: '+err); } }; reader.readAsText(f);
+      });
 
-      function escapeHtml(s){
-        return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[ch]);
-      }
+      resetBtn.addEventListener('click', ()=>{ if(!confirm('Clear all saved letters from local storage? This cannot be undone.')) return; localStorage.removeItem(STORAGE_KEY); populateAdmin(); alert('Cleared.'); });
 
-      // admin open/close
+      // admin wiring
+      adminClose.addEventListener('click', ()=>{ adminModal.style.display='none'; adminModal.setAttribute('aria-hidden','true'); });
+      adminSave.addEventListener('click', ()=>{ saveFromAdmin(); adminModal.style.display='none'; adminModal.setAttribute('aria-hidden','true'); alert('Saved locally.'); });
+
+      adminPreview.addEventListener('click', ()=>{ const mood = prompt('Preview which mood? Enter mood name exactly (e.g. Sad)'); if(!mood) return; const el = document.getElementById('txt-'+mood); if(!el) return alert('Mood not found in editor.'); const arr = parseTextarea(el.value||''); if(!arr.length) return alert('No messages for that mood.'); const pick = arr[Math.floor(Math.random()*arr.length)]; displayMessage(pick); adminModal.style.display='none'; adminModal.setAttribute('aria-hidden','true'); });
+
+      adminClear.addEventListener('click', ()=>{ if(!confirm('Clear editor fields (not saved to storage until you click Save)?')) return; moods.forEach(m=>{ const el = document.getElementById('txt-'+m); if(el) el.value=''; }); });
+
+      adminLoadDefaults.addEventListener('click', ()=>{
+        if(!confirm('Load example placeholders? This will overwrite editor fields.')) return;
+        const samples = {
+          'Unloved': ["I might not say it enough, but you are seen and loved.", "If I could rewrite today, I'd fill every line with how much you matter."],
+          'Missing me': ["I miss the little things — your laugh, your hand in mine.", "I can't wait to be near you again, to tell you everything in person."],
+          'Angry at me': ["I know I hurt you and I'm sorry. I want to fix this, together.", "Please let me listen — I want to understand and make this right."],
+          'Doubting yourself': ["You are stronger than you think, and I'm here for every step.", "Even when you doubt, remember how deeply I believe in you."],
+          "Can't sleep": ["If you can't sleep, imagine my arms around you, soft and steady.", "I'll be your quiet tonight — close your eyes and breathe with me."],
+          'Sad': ["It's okay to feel this way. I'm here, not to fix, but to hold you through it.", "Your feelings matter — let me be the shoulder you lean on."]
+        };
+        moods.forEach(m=>{ const el = document.getElementById('txt-'+m); if(el) el.value = (samples[m]||[]).join('\n---\n'); });
+      });
+
+      // populate admin on load
+      populateAdmin();
+
+      // open admin sequence: 5 clicks then password
       let clickCount = 0; let clickTimer = null;
       siteTitle.addEventListener('click', ()=>{
         clickCount++;
         if(clickTimer) clearTimeout(clickTimer);
         clickTimer = setTimeout(()=>{ clickCount = 0; }, 2500);
-        if(clickCount >=5){
-          clickCount = 0;
-          openAdmin();
-        }
+        if(clickCount >=5){ clickCount = 0; showPwPrompt(); }
       });
 
-      function openAdmin(){
-        populateAdmin();
-        adminModal.style.display = 'flex';
-      }
-      function closeAdmin(){ adminModal.style.display = 'none'; }
+      function showPwPrompt(){ pwPrompt.style.display='block'; pwInput.value=''; pwInput.focus(); }
+      function hidePwPrompt(){ pwPrompt.style.display='none'; }
 
-      adminClose.addEventListener('click', closeAdmin);
-      adminSave.addEventListener('click', ()=>{ saveFromAdmin(); closeAdmin(); alert('Saved locally.'); });
-      adminClear.addEventListener('click', ()=>{
-        if(!confirm('Clear ALL message fields? This will wipe letters in the admin editor but will not change storage until you click Save.')) return;
-        moods.forEach(m=>{ const el = document.getElementById('txt-'+m); if(el) el.value=''; });
-      });
+      pwCancel.addEventListener('click', ()=>{ hidePwPrompt(); });
+      pwSubmit.addEventListener('click', ()=>{ const v = (pwInput.value||'').trim(); if(!v) return; if(v === ADMIN_PW){ hidePwPrompt(); openAdmin(); } else { alert('Incorrect password.'); pwInput.value=''; pwInput.focus(); } });
+      pwInput.addEventListener('keydown',(e)=>{ if(e.key === 'Enter') pwSubmit.click(); if(e.key === 'Escape') pwCancel.click(); });
 
-      adminPreview.addEventListener('click', ()=>{
-        const mood = moodSelect.value;
-        const el = document.getElementById('txt-' + mood);
-        const arr = parseTextarea(el.value || '');
-        if(!arr.length) return alert('No messages for the selected mood in the editor.');
-        const pick = arr[Math.floor(Math.random()*arr.length)];
-        displayMessage(pick);
-        closeAdmin();
-      });
+      function openAdmin(){ populateAdmin(); adminModal.style.display='flex'; adminModal.setAttribute('aria-hidden','false'); }
 
-      adminLoadDefaults.addEventListener('click', ()=>{
-        if(!confirm('Load example placeholders? This will overwrite what is in the editor fields.')) return;
-        const samples = {
-          'Unloved': ["I might not say it enough, but you are seen and loved.", "If I could rewrite today, I'd fill every line with how much you matter."],
-          'Missing me': ["I miss the little things — your laugh, your hand in mine.", "I can't wait to be near you again, to tell you everything in person."],
-          'Angry at me': ["I know I hurt you and I'm sorry. I want to fix this, together.", "Please let me listen — I want to understand and make this right."] ,
-          'Doubting yourself': ["You are stronger than you think, and I'm here for every step.", "Even when you doubt, remember how deeply I believe in you."] ,
-          "Can't sleep": ["If you can't sleep, imagine my arms around you, soft and steady.", "I'll be your quiet tonight — close your eyes and breathe with me."] ,
-          'Sad': ["It's okay to feel this way. I'm here, not to fix, but to hold you through it.", "Your feelings matter — let me be the shoulder you lean on."]
-        };
-        moods.forEach(m=>{
-          const el = document.getElementById('txt-'+m);
-          if(el) el.value = (samples[m]||[]).join('\n---\n');
-        });
-      });
-
-      // show message
-      showBtn.addEventListener('click', ()=>{
-        const mood = moodSelect.value;
-        const msg = pickRandom(mood);
-        displayMessage(msg);
-      });
-      clearBtn.addEventListener('click', ()=>{ messageBox.innerHTML=''; });
-
-      // copy/share/export/import/reset
-      copyBtn.addEventListener('click', async ()=>{
-        const text = messageBox.innerText || '';
-        if(!text) return alert('No message to copy.');
-        try{ await navigator.clipboard.writeText(text); alert('Copied to clipboard'); }catch(e){ alert('Clipboard copy failed: ' + e); }
-      });
-
-      shareBtn.addEventListener('click', async ()=>{
-        const text = messageBox.innerText || '';
-        if(!text) return alert('No message to share.');
-        if(navigator.share){
-          try{ await navigator.share({title:'A message for you', text}); }
-          catch(e){ console.warn(e); alert('Share canceled or failed.'); }
-        }else alert('Share not supported on this browser.');
-      });
-
-      function download(filename, text){
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([text], {type:'application/json'}));
-        a.download = filename; document.body.appendChild(a); a.click(); a.remove();
-      }
-
-      exportBtn.addEventListener('click', ()=>{ const data = loadStorage(); download('wifey_letters_export.json', JSON.stringify(data, null, 2)); });
-      importBtn.addEventListener('click', ()=>{ document.getElementById('importFile').click(); });
-
-      // admin export/import
-      document.getElementById('exportJson').addEventListener('click', ()=>{ const data = loadStorage(); download('wifey_letters_export.json', JSON.stringify(data, null, 2)); });
-
-      document.getElementById('importFile').addEventListener('change', (ev)=>{
-        const f = ev.target.files[0]; if(!f) return;
-        const reader = new FileReader();
-        reader.onload = e=>{
-          try{
-            const obj = JSON.parse(e.target.result);
-            // basic validation
-            let ok = true;
-            moods.forEach(m=>{ if(!(m in obj)) ok = false; });
-            if(!ok){ alert('Invalid file format.'); return; }
-            saveStorage(obj);
-            populateAdmin();
-            alert('Imported and saved to local storage.');
-          }catch(err){ alert('Import failed: ' + err); }
-        };
-        reader.readAsText(f);
-      });
-
-      resetBtn.addEventListener('click', ()=>{
-        if(!confirm('Clear all saved letters from local storage? This cannot be undone.')) return;
-        localStorage.removeItem(STORAGE_KEY);
-        populateAdmin();
-        alert('Storage cleared.');
-      });
-
-      // small import button duplicate to open file chooser
-      exportBtn.addEventListener('click', ()=>{});
-
-      // load initial admin data
-      populateAdmin();
-
-      // show last used if present
-      try{ const s = localStorage.getItem('_wifey_last_used'); if(s) lastUsed.textContent = s; }catch(e){}
-
-      // store last used on display
-      const origDisplay = displayMessage;
-      // done via call spots already updating lastUsed
-
-      // When admin saves, also store a timestamp for last used display
-      const _saveStorage = saveStorage;
-      saveStorage = function(obj){ _saveStorage(obj); localStorage.setItem('_wifey_last_used', new Date().toLocaleString()); };
-
-      // ensure that adminSave uses our wrapped save
-      adminSave.addEventListener('click', ()=>{ /* already wired above */ });
-
-      // keyboard shortcut to open admin as a fallback: Ctrl+Shift+A
-      document.addEventListener('keydown', (e)=>{
-        if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') openAdmin();
-      });
+      // keyboard fallback
+      document.addEventListener('keydown', (e)=>{ if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') showPwPrompt(); });
 
     })();
   </script>
