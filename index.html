@@ -255,16 +255,19 @@ Message B"></textarea>
       function defaultData(){ const d = {}; moods.forEach(m=>d[m]=[]); return d; }
 
       async function loadStorage(){
-      try {
-        const res = await fetch('https://raw.githubusercontent.com/PseudoNiYna/Letters-For-My-Wifey/refs/heads/main/wifey_letters_export.json');
-        if (!res.ok) throw new Error('Failed to fetch messages');
-        const data = await res.json();
-        return data;
-      } catch (e) {
-        console.error('Error loading messages:', e);
-        return defaultData();
-      }
-    }
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/PseudoNiYna/Letters-For-My-Wifey/refs/heads/main/wifey_letters_export.json');
+    if (!res.ok) throw new Error('Network error');
+    const data = await res.json();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); // cache
+    return data;
+  } catch (e) {
+    console.warn('Falling back to localStorage', e);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : defaultData();
+  }
+}
+      
       function saveStorage(obj){
         localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
         localStorage.setItem('_wifey_last_used', new Date().toLocaleString());
